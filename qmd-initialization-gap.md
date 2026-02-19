@@ -119,3 +119,20 @@ When I ran `qmd update` and `qmd embed` earlier, I ran them in the workspace dir
 - `extensions/significance/index.ts` — add QMD init to `registerService.start()`
 - `extensions/significance/src/qmd-context.ts` — optionally extract the init logic into a reusable `initQmdCollections()` function
 - After changes: `npm run build` in `~/bernard-repo`, then restart gateway
+
+---
+
+## Resolution
+
+**Status: Fixed** (commit `d67ba13f8` on `sudo25o1/bernard`)
+
+Added QMD init block to `registerService.start()` in `extensions/significance/index.ts`. On every gateway start, the service now:
+
+1. Resolves the agent-scoped XDG paths (same overrides `queryQmd` uses)
+2. Adds the three collections idempotently (memory-root, memory-alt, memory-dir)
+3. Runs `qmd update` synchronously (fast — only re-indexes changed files)
+4. Runs `qmd embed` in the background (non-blocking — takes ~20s)
+
+Collections are idempotent so re-running on every start is harmless. The embed runs in background so it doesn't delay gateway startup.
+
+**Before the code fix:** The agent-scoped index was manually populated using the correct XDG overrides. The gateway restart after deploying this fix will make that automatic going forward.
